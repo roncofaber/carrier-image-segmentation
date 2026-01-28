@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cimseg"
+version = "0.1.0"
+description = "Carrier Image Segmentation - Extract individual samples from carrier tray images"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "roncofaber"},
+]
+keywords = [
+    "image-segmentation",
+    "computer-vision",
+    "carrier-tray",
+    "sample-extraction",
+    "image-processing"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+]
+dependencies = [
+    "numpy>=1.20.0",
+    "scipy>=1.7.0",
+    "scikit-image>=0.18.0",
+    "matplotlib>=3.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov",
+    "black",
+    "isort",
+    "flake8",
+]
+
+[project.urls]
+Homepage = "https://github.com/roncofaber/carrier-image-segmentation"
+Documentation = "https://github.com/roncofaber/carrier-image-segmentation"
+Repository = "https://github.com/roncofaber/carrier-image-segmentation.git"
+Issues = "https://github.com/roncofaber/carrier-image-segmentation/issues"
+
+[tool.setuptools.packages.find]
+include = ["cimseg*"]
+
+[tool.setuptools.package-data]
+cimseg = ["*.py"]
