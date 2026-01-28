@@ -10,7 +10,7 @@ Created on Thu Jan 15 13:55:47 2026
 import numpy as np
 
 # image recognition
-from skimage import color
+from skimage import color, io
 
 # local imports
 from .segment import isolate_carrier, find_horizontal_peaks, find_cross_peaks_at_y
@@ -26,8 +26,8 @@ def carrier2samples(image, threshold=0.31, max_object_size=500, bar_height=20, b
 
     Parameters
     ----------
-    image : ndarray
-        Input tray image (RGB or grayscale)
+    image : ndarray or str
+        Input tray image (RGB or grayscale) or path to image file
     threshold : float, optional
         Threshold for holder detection (default: 0.31)
     max_object_size : int, optional
@@ -60,6 +60,10 @@ def carrier2samples(image, threshold=0.31, max_object_size=500, bar_height=20, b
     grid_lines : dict
         Dictionary with 'x_grid' and 'y_grid' coordinates
     """
+    
+    # Step 0: Read image if it's a file path, otherwise keep the image object
+    if isinstance(image, str):
+        image = io.imread(image)
 
     # Step 1: Detect and crop holder
     image = isolate_carrier(image, threshold=threshold,
