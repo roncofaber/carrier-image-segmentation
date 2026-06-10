@@ -8,6 +8,7 @@ Created on Tue Jan 27 17:52:45 2026
 
 # scientific computing
 import numpy as np
+from itertools import combinations
 from scipy.signal import find_peaks
 from scipy.stats import linregress
 
@@ -27,10 +28,8 @@ def get_tilt_angle(binary):
     contour = measure.find_contours(label_image == largest_region, 0.5)[0]
     
     # Select points on the left side of the contour
-    left_x_threshold = np.min(contour[:, 1]) + 10  # Adjust threshold for left boundary
-    left_side = contour[(contour[:, 1] < left_x_threshold) & 
-                        (contour[:, 0] > np.min(contour[:, 0]) - 10) & 
-                        (contour[:, 0] < np.max(contour[:, 0]) + 10)]
+    left_x_threshold = np.min(contour[:, 1]) + 10
+    left_side = contour[contour[:, 1] < left_x_threshold]
     
     
     # Fit a line to the left side points
@@ -115,16 +114,24 @@ def find_horizontal_peaks(gray_image, bar_height=20, bar_width=2000,
     
     # Find all peaks in the data
     peaks, _ = find_peaks(intensity_diffs, height=peak_height, distance=peak_distance)
-    
+
     # Filter peaks to only those in the middle region
     middle_peaks = peaks[(peaks >= middle_start) & (peaks <= middle_end)]
-    
-    # Sort by height and take the top 3
-    peak_heights = intensity_diffs[middle_peaks]
-    top_3_indices = np.argsort(peak_heights)[-3:]
-    three_peaks = middle_peaks[top_3_indices]
-    three_peaks = np.sort(three_peaks)  # Sort by position
-    
+
+    # Select the 3 most evenly-spaced peaks (physical crosses are equidistant)
+    if len(middle_peaks) <= 3:
+        three_peaks = middle_peaks
+    else:
+        best_cv = np.inf
+        best_triplet = middle_peaks[:3]
+        for triplet in combinations(middle_peaks, 3):
+            spacings = np.diff(triplet)
+            cv = np.std(spacings) / np.mean(spacings)
+            if cv < best_cv:
+                best_cv = cv
+                best_triplet = triplet
+        three_peaks = np.array(sorted(best_triplet))
+
     return three_peaks, intensity_diffs
 
 
@@ -156,8 +163,7 @@ def find_cross_peaks_at_y(gray_image, y_positions, cross_size=400, cross_width=2
         peak_distance: minimum distance between peaks
 
     Returns:
-        cross_coordinates: list of (x, y) coordinates for up to 3 crosses per y-position
-        all_results: list of intensity arrays for visualization
+        cross_coordinates: array of (x, y) coordinates, 3 per y-position, sorted by y then x
     """
     # Create the cross mask (white cross on black background)
     cross_mask = create_cross_mask(cross_size, cross_width)
@@ -165,8 +171,6 @@ def find_cross_peaks_at_y(gray_image, y_positions, cross_size=400, cross_width=2
     half_height = mask_height // 2
     half_width = mask_width // 2
 
-    # Store results for each peak
-    all_results = []
     cross_coordinates = []
 
     for peak_y in y_positions:
@@ -196,29 +200,25 @@ def find_cross_peaks_at_y(gray_image, y_positions, cross_size=400, cross_width=2
 
         # Convert to numpy array and invert (same as horizontal bar: 1 - diff)
         intensity_x = 1 - np.array(intensity_x)
-        all_results.append(intensity_x)
 
         # Find peaks in the intensity array
         peaks_x, _ = find_peaks(intensity_x, height=peak_height, distance=peak_distance)
 
-        # Get intensity scores for all peaks at this y-position
+        # Select the 3 brightest peaks in x. Unlike the y-direction (where a bright
+        # false positive can appear at the frame edge), the x false positives are
+        # always the outer frame walls which are dimmer than the true crosses.
         crosses_at_this_y = []
         for peak_idx in peaks_x:
-            x_coord = peak_idx + half_width  # Add half_width to get center position
-            intensity_score = intensity_x[peak_idx]
-            crosses_at_this_y.append((x_coord, peak_y, intensity_score))
+            x_coord = peak_idx + half_width
+            crosses_at_this_y.append((x_coord, peak_y, intensity_x[peak_idx]))
 
-        # Sort by intensity score (highest first) and take top 3 for this y-position
-        crosses_at_this_y.sort(key=lambda x: x[2], reverse=True)
-        top_3_at_this_y = crosses_at_this_y[:3]
-
-        # Add the top 3 crosses at this y-position to the final list
-        for x_coord, y_coord, _ in top_3_at_this_y:
+        crosses_at_this_y.sort(key=lambda c: c[2], reverse=True)
+        for x_coord, y_coord, _ in crosses_at_this_y[:3]:
             cross_coordinates.append((x_coord, y_coord))
     
-    cross_coordinates = np.array(cross_coordinates)
-            
-    sorted_indices = np.lexsort((cross_coordinates[:, 0], cross_coordinates[:, 1]))
-    sorted_coordinates = cross_coordinates[sorted_indices]
+    if not cross_coordinates:
+        return np.empty((0, 2), dtype=int)
 
-    return sorted_coordinates
+    cross_coordinates = np.array(cross_coordinates)
+    sorted_indices = np.lexsort((cross_coordinates[:, 0], cross_coordinates[:, 1]))
+    return cross_coordinates[sorted_indices]

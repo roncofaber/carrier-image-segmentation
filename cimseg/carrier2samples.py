@@ -18,7 +18,7 @@ from .utils import number_to_well
 
 #%%
 
-def carrier2samples(image, threshold=0.31, max_object_size=500, bar_height=20, bar_width=2000,
+def carrier2samples(image, threshold=0.31, max_object_size=500**2, bar_height=20, bar_width=2000,
                      peak_height=0.6, peak_distance=400, middle_start=500, middle_end=3000,
                      cross_size=400, cross_width=20, rotate=False):
     """
@@ -84,6 +84,12 @@ def carrier2samples(image, threshold=0.31, max_object_size=500, bar_height=20, b
         peak_height=peak_height, peak_distance=peak_distance)
 
     # Step 6: Calculate grid boundaries from cross positions
+    if len(cross_coordinates) != 9:
+        raise ValueError(
+            f"Expected 9 cross coordinates (3 rows × 3 columns) but found "
+            f"{len(cross_coordinates)}. Try adjusting peak_height or peak_distance."
+        )
+
     y_sorted = sorted(cross_coordinates[:, 1])
     x_sorted = sorted(cross_coordinates[:, 0])
 

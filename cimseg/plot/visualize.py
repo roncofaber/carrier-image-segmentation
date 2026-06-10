@@ -35,8 +35,8 @@ def visualize_segmentation(image, segments, grid_lines):
 
     # Label segments
     for well_idx, segment in segments.items():
-        x_center = (segment['x_range'][0])+50# + segment['x_range'][1]) / 2
-        y_center = (segment['y_range'][0])+50# + segment['y_range'][1]) / 2
+        x_center = (segment['x_range'][0] + segment['x_range'][1]) / 2
+        y_center = (segment['y_range'][0] + segment['y_range'][1]) / 2
         text_color = 'white'
         plt.text(x_center, y_center, f"{well_idx}",
                 ha='left', va='top', color=text_color, fontsize=10, fontweight='bold')
