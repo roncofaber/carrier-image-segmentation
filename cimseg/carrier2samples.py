@@ -91,16 +91,23 @@ def carrier2samples(image, threshold=0.31, max_object_size=500**2, bar_height=20
         )
 
     y_sorted = sorted(cross_coordinates[:, 1])
-    x_sorted = sorted(cross_coordinates[:, 0])
 
     # Average positions for the 3x3 cross grid
     y_str = int(np.mean(y_sorted[:3]))
     y_mid = int(np.mean(y_sorted[3:6]))
     y_end = int(np.mean(y_sorted[6:9]))
 
-    x_str = int(np.mean(x_sorted[:3]))
-    x_mid = int(np.mean(x_sorted[3:6]))
-    x_end = int(np.mean(x_sorted[6:9]))
+    # Group crosses by row (3 per row, x already sorted within each row) and
+    # discard rows whose column positions don't line up with the rest, since
+    # a row can score as a horizontal peak (e.g. a printed label) without
+    # actually containing crosses.
+    rows_x = cross_coordinates[:, 0].reshape(3, 3)
+    col_medians = np.median(rows_x, axis=0)
+    spacing_scale = (col_medians[-1] - col_medians[0]) / 2
+    row_ok = np.all(np.abs(rows_x - col_medians) < 0.3 * spacing_scale, axis=1)
+    good_rows = rows_x[row_ok] if row_ok.any() else rows_x
+
+    x_str, x_mid, x_end = (int(v) for v in good_rows.mean(axis=0))
 
     # Calculate spacing and extrapolate to 4x4 grid
     x_spacing = (x_end - x_str) / 2

@@ -118,7 +118,10 @@ def find_horizontal_peaks(gray_image, bar_height=20, bar_width=2000,
     # Filter peaks to only those in the middle region
     middle_peaks = peaks[(peaks >= middle_start) & (peaks <= middle_end)]
 
-    # Select the 3 most evenly-spaced peaks (physical crosses are equidistant).
+    # Select the 3 most evenly-spaced peaks (physical crosses are equidistant)
+    # whose match intensities are also mutually consistent (a real cross row
+    # matches the bar equally well at each of the 3 rows, whereas unrelated
+    # features like a printed label can coincidentally tie on spacing).
     # Among ties, prefer triplets whose extrapolated outer boundaries stay
     # within the image, since an out-of-bounds boundary means the wrong
     # interior triplet was picked (e.g. a tray with an extra evenly-spaced
@@ -130,10 +133,12 @@ def find_horizontal_peaks(gray_image, bar_height=20, bar_width=2000,
         best_triplet = middle_peaks[:3]
         for triplet in combinations(middle_peaks, 3):
             spacings = np.diff(triplet)
-            cv = np.std(spacings) / np.mean(spacings)
+            spacing_cv = np.std(spacings) / np.mean(spacings)
+            heights = intensity_diffs[list(triplet)]
+            height_cv = np.std(heights) / np.mean(heights)
             spacing = np.mean(spacings)
             out_of_bounds = (triplet[0] - spacing < 0) or (triplet[-1] + spacing > height)
-            key = (out_of_bounds, cv)
+            key = (out_of_bounds, spacing_cv + height_cv)
             if best_key is None or key < best_key:
                 best_key = key
                 best_triplet = triplet

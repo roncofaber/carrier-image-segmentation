@@ -48,6 +48,9 @@ dev = [
     "flake8",
 ]
 
+[project.scripts]
+cimseg = "cimseg.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/roncofaber/carrier-image-segmentation"
 Documentation = "https://github.com/roncofaber/carrier-image-segmentation"
